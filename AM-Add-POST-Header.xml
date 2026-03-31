@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<AssignMessage async="false" continueOnError="false" enabled="true" name="AM-Add-POST-Header">
+  <DisplayName>AM-Add-POST-Header</DisplayName>
+  <Add>
+    <Headers>
+      <Header name="X-Type">POST</Header>
+    </Headers>
+  </Add>
+  <AssignTo createNew="false" transport="http" type="request"/>
+  <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</AssignMessage>

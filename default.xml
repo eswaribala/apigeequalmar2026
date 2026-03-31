@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ProxyEndpoint name="default">
+  <Description/>
+  <FaultRules/>
+  <PreFlow name="PreFlow">
+    <Request/>
+    <Response/>
+  </PreFlow>
+  <Flows>
+    <!-- GET Flow -->
+    <Flow name="GetFlow">
+      <Condition>(proxy.pathsuffix MatchesPath "/test") and (request.verb = "GET")</Condition>
+      <Request>
+        <Step>
+          <Name>AM-Add-GET-Header</Name>
+        </Step>
+      </Request>
+      <Response/>
+    </Flow>
+    <!-- POST Flow -->
+    <Flow name="PostFlow">
+      <Condition>(proxy.pathsuffix MatchesPath "/test") and (request.verb = "POST")</Condition>
+      <Request>
+        <Step>
+          <Name>AM-Add-POST-Header</Name>
+        </Step>
+      </Request>
+      <Response/>
+    </Flow>
+  </Flows>
+  <PostFlow name="PostFlow">
+    <Request/>
+    <Response/>
+  </PostFlow>
+
+  <HTTPProxyConnection>
+    <BasePath>/conditionallogic</BasePath>
+    <Properties/>
+  </HTTPProxyConnection>
+  <RouteRule name="default">
+    <TargetEndpoint>default</TargetEndpoint>
+  </RouteRule>
+</ProxyEndpoint>

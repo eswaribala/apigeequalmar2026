@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<AssignMessage async="false" continueOnError="false" enabled="true" name="AM-Add-GET-Header">
+  <DisplayName>AM-Add-GET-Header</DisplayName>
+  <Add>
+    <Headers>
+      <Header name="X-Type">GET</Header>
+    </Headers>
+  </Add>
+  <AssignTo createNew="false" transport="http" type="request"/>
+  <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</AssignMessage>
