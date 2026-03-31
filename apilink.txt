@@ -2,3 +2,4 @@ http://34.56.251.121:7076/catalogs/v1.0
 https://httpbin.org/anything
 https://restcountries.com/v3.1/all?fields=name,capital,currencies
 https://jsonplaceholder.typicode.com/users
+https://www.googleapis.com/books/v1/volumes?q=search+terms
