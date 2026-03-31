@@ -4,3 +4,6 @@ https://restcountries.com/v3.1/all?fields=name,capital,currencies
 https://jsonplaceholder.typicode.com/users
 https://www.googleapis.com/books/v1/volumes?q=search+terms
 https://api.openweathermap.org/data/2.5/weather?q=Hyderabad&appid=
+
+https://github.com/apigee/api-platform-samples/blob/master/default-proxies/oauth/oauth.zip?raw=true
+
