@@ -8,4 +8,6 @@ https://api.openweathermap.org/data/2.5/weather?q=Hyderabad&appid=
 https://github.com/apigee/api-platform-samples/blob/master/default-proxies/oauth/oauth.zip?raw=true
 https://136.110.210.14.nip.io/oauth/client_credential/accesstoken?grant_type=client_credentials
 
+https://github.com/apigee/api-platform-samples.git
+
 
