@@ -30,7 +30,7 @@ gcloud auth application-default login --no-launch-browser
 
 3.Create a working folder
 
-mkdir -p ~/apigee-hybrid && cd ~/apigee-hybrid
+mkdir -p ~/apigee-hybrid/helm-charts && cd ~/apigee-hybrid/helm-charts
 export CHART_REPO=oci://us-docker.pkg.dev/apigee-release/apigee-hybrid-helm-charts
 export CHART_VERSION=1.16.0-hotfix.1
 
