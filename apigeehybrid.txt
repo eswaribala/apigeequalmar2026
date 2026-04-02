@@ -1,0 +1,300 @@
+1. Helm
+
+curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+helm version
+
+
+2. install gcloud
+
+sudo apt update
+sudo apt install -y apt-transport-https ca-certificates gnupg curl
+
+echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+
+curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg
+sudo apt update
+sudo apt install -y google-cloud-cli
+
+gcloud --version
+
+gcloud auth login --no-launch-browser
+
+gcloud config set project apigee-hybrid-prod-10
+
+gcloud config list
+
+gcloud auth list
+
+gcloud auth application-default login --no-launch-browser
+
+
+3.Create a working folder
+
+mkdir -p ~/apigee-hybrid && cd ~/apigee-hybrid
+
+4. Download the Apigee hybrid Helm charts
+
+helm pull $CHART_REPO/apigee-operator --version $CHART_VERSION --untar && helm pull $CHART_REPO/apigee-datastore --version $CHART_VERSION --untar && helm pull $CHART_REPO/apigee-env --version $CHART_VERSION --untar && helm pull $CHART_REPO/apigee-ingress-manager --version $CHART_VERSION --untar && helm pull $CHART_REPO/apigee-org --version $CHART_VERSION --untar && helm pull $CHART_REPO/apigee-redis --version $CHART_VERSION --untar && helm pull $CHART_REPO/apigee-telemetry --version $CHART_VERSION --untar && helm pull $CHART_REPO/apigee-virtualhost --version $CHART_VERSION --untar
+
+5.
+After the pull succeeds, run:
+
+ls -l ~/apigee-hybrid/helm-charts
+
+6.
+
+find . -name create-service-account
+
+
+7.Create all required service accounts for a production-style setup
+
+ls -l ./apigee-operator/etc/tools/create-service-account
+
+chmod +x ./apigee-operator/etc/tools/create-service-account
+
+
+bash ./apigee-operator/etc/tools/create-service-account --env prod
+
+8
+Now create the key manually.
+
+Use this single line:
+
+mkdir -p ~/apigee-hybrid/helm-charts/apigee-operator/etc/tools/service-accounts && gcloud iam service-accounts keys create ~/apigee-hybrid/helm-charts/apigee-operator/etc/tools/service-accounts/apigee-watcher-apigee-hybrid-prod-10.json --iam-account=apigee-watcher@apigee-hybrid-prod-10.iam.gserviceaccount.com
+
+
+ls -l ~/apigee-hybrid/helm-charts/apigee-operator/etc/tools/service-accounts
+
+
+9
+Create the Apigee namespace if needed
+
+kubectl create namespace apigee || true
+
+10.
+Create the Kubernetes secret for UDCA
+Fix (create UDCA manually)
+Step 1: Create service account
+gcloud iam service-accounts create apigee-udca --display-name="apigee-udca"
+Step 2: Assign role
+gcloud projects add-iam-policy-binding apigee-hybrid-prod-10 --member="serviceAccount:apigee-udca@apigee-hybrid-prod-10.iam.gserviceaccount.com" --role="roles/monitoring.metricWriter"
+
+Step 3: Create key (IMPORTANT)
+gcloud iam service-accounts keys create ~/apigee-hybrid/helm-charts/apigee-operator/etc/tools/service-accounts/apigee-hybrid-prod-10-apigee-udca.json --iam-account=apigee-udca@apigee-hybrid-prod-10.iam.gserviceaccount.com
+Step 4: Verify
+ls -l ~/apigee-hybrid/helm-charts/apigee-operator/etc/tools/service-accounts
+
+kubectl create secret generic apigee-udca-svc-account --from-file=client_secret.json=/home/ubuntu/apigee-hybrid/helm-charts/apigee-operator/etc/tools/service-accounts/apigee-hybrid-prod-10-apigee-udca.json -n apigee
+
+
+11
+Create the Kubernetes secret for Synchronizer
+cd ~/apigee-hybrid/helm-charts/apigee-operator/etc/tools
+kubectl create secret generic apigee-synchronizer-svc-account --from-file=client_secret.json=./service-accounts/apigee-hybrid-prod-10-apigee-synchronizer.json -n apigee
+
+12
+
+Create the Kubernetes secret for Runtime
+Step 1: Create service account
+gcloud iam service-accounts create apigee-runtime --display-name="apigee-runtime"
+Step 2: Assign required role
+gcloud projects add-iam-policy-binding apigee-hybrid-prod-10 --member="serviceAccount:apigee-runtime@apigee-hybrid-prod-10.iam.gserviceaccount.com" --role="roles/apigee.runtimeAgent"
+
+Step 3: Create key file
+gcloud iam service-accounts keys create ./service-accounts/apigee-hybrid-prod-10-apigee-runtime.json --iam-account=apigee-runtime@apigee-hybrid-prod-10.iam.gserviceaccount.com
+
+Step 4: Verify
+ls -l ./service-accounts
+
+kubectl create secret generic apigee-runtime-svc-account --from-file=client_secret.json=./service-accounts/apigee-hybrid-prod-10-apigee-runtime.json -n apigee
+
+13
+
+Create the Kubernetes secret for Cassandra
+
+kubectl create secret generic apigee-cassandra-svc-account --from-file=client_secret.json=./service-accounts/apigee-hybrid-prod-10-apigee-cassandra.json -n apigee
+
+
+
+14. Create the Kubernetes secret for MART
+
+kubectl create secret generic apigee-mart-svc-account --from-file=client_secret.json=./service-accounts/apigee-hybrid-prod-10-apigee-mart.json -n apigee
+
+15. Create the Kubernetes secret for Logger
+
+kubectl create secret generic apigee-logger-svc-account --from-file=client_secret.json=./service-accounts/apigee-hybrid-prod-10-apigee-logger.json -n apigee
+
+16. Create the Kubernetes secret for Metrics
+
+kubectl create secret generic apigee-metrics-svc-account --from-file=client_secret.json=./service-accounts/apigee-hybrid-prod-10-apigee-metrics.json -n apigee
+
+17.
+Create the Kubernetes secret for Watcher
+
+kubectl create secret generic apigee-watcher-svc-account --from-file=client_secret.json=./service-accounts/apigee-hybrid-prod-10-apigee-watcher.json -n apigee
+
+18. 
+Create the Kubernetes secret for Guardrails
+cd ~/apigee-hybrid/helm-charts && ./apigee-operator/etc/tools/create-service-account --env prod --profile apigee-guardrails --dir ~/apigee-hybrid/helm-charts/apigee-operator/etc/tools/service-accounts
+
+confirm account created
+gcloud iam service-accounts list --filter="email:apigee-guardrails@apigee-hybrid-prod-10.iam.gserviceaccount.com"
+
+gcloud iam service-accounts keys create ~/apigee-hybrid/helm-charts/apigee-operator/etc/tools/service-accounts/apigee-hybrid-prod-10-apigee-guardrails.json --iam-account=apigee-guardrails@apigee-hybrid-prod-10.iam.gserviceaccount.com
+
+Then create the Kubernetes secret:
+
+cd ~/apigee-hybrid/helm-charts/apigee-operator/etc/tools && kubectl create secret generic apigee-guardrails-svc-account --from-file=client_secret.json=./service-accounts/apigee-hybrid-prod-10-apigee-guardrails.json -n apigee
+
+ls -l ~/apigee-hybrid/helm-charts/apigee-operator/etc/tools/service-accounts
+
+kubectl get secrets -n apigee
+
+
+19.
+20. Check the secrets
+
+kubectl get secrets -n apigee
+
+=========================================================
+
+Step 1: confirm the basics are ready
+
+Run these first:
+
+kubectl get nodes
+kubectl get pods -n cert-manager
+kubectl get pods -n kube-system | grep ebs-csi
+
+
+Step 2: make sure your Apigee organization exists
+
+Run:
+
+gcloud config set project apigee-hybrid-prod-10
+
+Step 3: download the Helm charts
+
+Run:
+
+helm pull $CHART_REPO/apigee-operator --version $CHART_VERSION --untar --untardir charts-new
+
+touch ~/apigee-hybrid/overrides.yaml
+
+nano ~/apigee-hybrid/overrides.yaml
+
+add or edit
+ nano ~/apigee-hybrid/helm-charts/overrides.yaml
+
+gcp:
+  projectID: apigee-hybrid-prod-10
+  workloadIdentity:
+    enabled: false
+  federatedWorkloadIdentity:
+    enabled: false
+
+nodeSelector:
+  requiredForScheduling: false
+
+org: apigee-hybrid-prod-10
+
+envs:
+  - name: test
+
+virtualhosts:
+  - name: default
+    hostAliases:
+      - "*"
+
+connectAgent:
+  serviceAccountSecretName: apigee-synchronizer-svc-account
+
+guardrails:
+  serviceAccountPath: "./service-accounts/apigee-hybrid-prod-10-apigee-logger.json"  # ✅ THIS IS THE KEY FIX
+
+runtime:
+  serviceAccountSecretName: apigee-runtime-svc-account
+
+mart:
+  serviceAccountSecretName: apigee-mart-svc-account
+
+cassandra:
+  serviceAccountSecretName: apigee-cassandra-svc-account
+
+logger:
+  serviceAccountSecretName: apigee-logger-svc-account
+
+metrics:
+  serviceAccountSecretName: apigee-metrics-svc-account
+===
+cd ~/apigee-hybrid/apigee-hybrid-helm-charts
+gcloud services enable apigee.googleapis.com apigeeconnect.googleapis.com pubsub.googleapis.com cloudresourcemanager.googleapis.com monitoring.googleapis.com --project apigee-hybrid-prod-10
+
+gcloud projects add-iam-policy-binding apigee-hybrid-prod-10 --member="serviceAccount:apigee-guardrails@apigee-hybrid-prod-10.iam.gserviceaccount.com" --role="roles/serviceusage.serviceUsageViewer"
+gcloud projects get-iam-policy apigee-hybrid-prod-10 --flatten="bindings[].members" --filter="bindings.members:apigee-guardrails"
+#helm upgrade --install apigee-operator apigee-operator/ -n apigee --create-namespace -f ~/apigee-hybrid/overrides.yaml
+cd ~/apigee-hybrid/helm-charts && helm upgrade --install apigee-operator apigee-operator/ -n apigee -f ~/apigee-hybrid/overrides.yaml --timeout 15m --debug
+check
+gcloud services list --enabled --project apigee-hybrid-prod-10 | grep -E "apigee|apigeeconnect|pubsub|cloudresourcemanager|monitoring"
+Install datastore (Cassandra)
+gcloud projects add-iam-policy-binding apigee-hybrid-prod-10 --member="serviceAccount:apigee-guardrails@apigee-hybrid-prod-10.iam.gserviceaccount.com" --role="roles/serviceusage.serviceUsageViewer"
+gcloud services enable apigee.googleapis.com apigeeconnect.googleapis.com pubsub.googleapis.com cloudresourcemanager.googleapis.com monitoring.googleapis.com --project apigee-hybrid-prod-10
+
+✅ 🔥 BEST FIX (force CRDs manually)
+
+Instead of waiting for Helm to create CRDs, install them manually first
+
+✅ Step 1 — Install CRDs manually (single line)
+kubectl apply -f https://storage.googleapis.com/apigee-release/hybrid/crds/1.16.0/apigee-crds.yaml or
+
+kubectl apply -k apigee-operator/etc/crds/default/
+kubectl annotate storageclass gp2 storageclass.kubernetes.io/is-default-class="true" --overwrite
+kubectl get csidrivers
+aws eks list-clusters
+aws eks create-addon --cluster-name apigee-hybrid-eks --addon-name aws-ebs-csi-driver
+kubectl get pods -n kube-system | egrep 'ebs|csi'
+
+cat <<'EOF' | kubectl apply -f -
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: gp3-csi
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+provisioner: ebs.csi.aws.com
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+parameters:
+  type: gp3
+  fsType: ext4
+EOF
+
+=====
+✅ Step 2 — Verify CRDs
+kubectl get crds | grep apigee
+kubectl apply --server-side -k ~/apigee-hybrid/helm-charts/apigee-operator/etc/crds/default
+kubectl get crd | grep -E 'apigeeorganizations|apigeetelemetries'
+helm upgrade --install apigee-datastore apigee-datastore/ -n apigee -f ~/apigee-hybrid/overrides.yaml
+kubectl get endpoints apigee-webhook-service -n apigee
+Install runtime
+helm upgrade --install apigee-runtime apigee-runtime/ -n apigee -f ~/apigee-hybrid/overrides.yaml
+==
+metrics:
+  serviceAccountPath: "apigee-non-prod-credential-configuration.json"
+===
+Install telemetry
+helm upgrade --install apigee-telemetry apigee-telemetry/ -n apigee -f ~/apigee-hybrid/overrides.yaml
+
+kubectl get pods -n apigee
+
+
+🎯 EXPECTED PODS
+
+You should see:
+
+cassandra-0 / 1 / 2 ✅
+mart ✅
+synchronizer ✅
+runtime pods ✅
+udca ✅
+watcher ✅
