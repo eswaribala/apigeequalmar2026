@@ -25,7 +25,7 @@ gcloud config list
 
 gcloud auth list
 
-gcloud auth application-default login --no-launch-browser
+#gcloud auth application-default login --no-launch-browser
 
 
 3.Create a working folder
@@ -33,6 +33,7 @@ gcloud auth application-default login --no-launch-browser
 mkdir -p ~/apigee-hybrid/helm-charts && cd ~/apigee-hybrid/helm-charts
 export CHART_REPO=oci://us-docker.pkg.dev/apigee-release/apigee-hybrid-helm-charts
 export CHART_VERSION=1.16.0-hotfix.1
+
 
 4. Download the Apigee hybrid Helm charts
 
@@ -86,7 +87,7 @@ gcloud iam service-accounts keys create ~/apigee-hybrid/helm-charts/apigee-opera
 Step 4: Verify
 ls -l ~/apigee-hybrid/helm-charts/apigee-operator/etc/tools/service-accounts
 
-kubectl create secret generic apigee-udca-svc-account --from-file=client_secret.json=/home/ubuntu/apigee-hybrid/helm-charts/apigee-operator/etc/tools/service-accounts/apigee-hybrid-prod-10-apigee-udca.json -n apigee
+kubectl create secret generic apigee-udca-svc-account --from-file=client_secret.json=~/apigee-hybrid/helm-charts/apigee-operator/etc/tools/service-accounts/apigee-hybrid-prod-10-apigee-udca.json -n apigee
 
 
 11
@@ -176,7 +177,7 @@ Run:
 gcloud config set project apigee-hybrid-prod-10
 
 Step 3: download the Helm charts
-
+cd  ~/apigee-hybrid/helm-charts
 Run:
 
 helm pull $CHART_REPO/apigee-operator --version $CHART_VERSION --untar --untardir charts-new
@@ -199,6 +200,8 @@ nodeSelector:
   requiredForScheduling: false
 
 org: apigee-hybrid-prod-10
+metrics:
+  serviceAccountPath: "apigee-hybrid-prod-10-apigee-non-prod.json"
 
 envs:
   - name: test
@@ -236,7 +239,7 @@ gcloud projects add-iam-policy-binding apigee-hybrid-prod-10 --member="serviceAc
 gcloud projects get-iam-policy apigee-hybrid-prod-10 --flatten="bindings[].members" --filter="bindings.members:apigee-guardrails"
 #helm upgrade --install apigee-operator apigee-operator/ -n apigee --create-namespace -f ~/apigee-hybrid/overrides.yaml
 cd ~/apigee-hybrid/helm-charts && helm upgrade --install apigee-operator apigee-operator/ -n apigee -f ~/apigee-hybrid/overrides.yaml --timeout 15m --debug
-check
+#check
 gcloud services list --enabled --project apigee-hybrid-prod-10 | grep -E "apigee|apigeeconnect|pubsub|cloudresourcemanager|monitoring"
 Install datastore (Cassandra)
 gcloud projects add-iam-policy-binding apigee-hybrid-prod-10 --member="serviceAccount:apigee-guardrails@apigee-hybrid-prod-10.iam.gserviceaccount.com" --role="roles/serviceusage.serviceUsageViewer"
@@ -285,6 +288,7 @@ metrics:
   serviceAccountPath: "apigee-non-prod-credential-configuration.json"
 ===
 Install telemetry
+kubectl delete secret apigee-metrics-svc-account -n apigee
 helm upgrade --install apigee-telemetry apigee-telemetry/ -n apigee -f ~/apigee-hybrid/overrides.yaml
 
 kubectl get pods -n apigee
@@ -300,3 +304,4 @@ synchronizer ✅
 runtime pods ✅
 udca ✅
 watcher ✅
+
