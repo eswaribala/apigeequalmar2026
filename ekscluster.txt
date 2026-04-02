@@ -1,0 +1,76 @@
+1. Install tools
+sudo apt update && sudo apt install -y unzip curl
+
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && unzip awscliv2.zip && sudo ./aws/install && aws --version
+
+curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp && sudo mv /tmp/eksctl /usr/local/bin && eksctl version
+
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable-1.30.txt)/bin/linux/amd64/kubectl" && chmod +x kubectl && sudo mv kubectl /usr/local/bin/ && kubectl version --client
+
+
+2. AWS setup
+aws configure
+aws sts get-caller-identity
+
+result
+
+{
+    "UserId": "AIDARHQV23ZCACK7YTDI3",
+    "Account": "084871405124",
+    "Arn": "arn:aws:iam::084871405124:user/eswaribala"
+}
+
+
+3. Create EKS cluster (Apigee-ready)
+
+
+Replace values if needed
+
+eksctl create cluster --name apigee-hybrid-eks --region us-east-1 --version 1.30 --nodegroup-name apigee-data --node-type m5.xlarge --nodes 3 --nodes-min 3 --nodes-max 3 --managed
+
+
+eksctl create nodegroup --cluster apigee-hybrid-eks --region us-east-1 --name apigee-runtime --node-type m5.xlarge --nodes 3 --nodes-min 3 --nodes-max 3 --managed
+
+
+4. Connect kubectl
+aws eks update-kubeconfig --region us-east-1 --name apigee-hybrid-eks
+kubectl get nodes
+
+
+5. Grant admin access
+#aws eks create-access-entry --cluster-name apigee-hybrid-eks --region us-east-1 --principal-arn arn:aws:iam::084871405124:user/eswaribala --type STANDARD
+aws eks associate-access-policy --cluster-name apigee-hybrid-eks --region us-east-1 --principal-arn arn:aws:iam::084871405124:user/eswaribala --policy-arn arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy --access-scope type=cluster
+
+
+6. Fix EBS CSI (CRITICAL)
+
+
+
+eksctl utils associate-iam-oidc-provider --cluster apigee-hybrid-eks --region us-east-1 --approve
+
+eksctl create iamserviceaccount --cluster apigee-hybrid-eks --region us-east-1 --namespace kube-system --name ebs-csi-controller-sa --role-name AmazonEKS_EBS_CSI_DriverRole --attach-policy-arn arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy --approve --override-existing-serviceaccounts
+
+kubectl get pods -n kube-system | grep ebs-csi
+
+
+7. Install Helm
+curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash && helm version
+
+8. Install cert-manager (REQUIRED)
+kubectl create namespace cert-manager || true
+
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.17.2/cert-manager.yaml
+
+9. Test storage (VERY IMPORTANT)
+kubectl apply -f https://k8s.io/examples/pods/storage/pv-claim.yaml
+
+kubectl get pvc
+
+10. Final checks before Apigee
+kubectl get nodes
+kubectl get pods -A
+kubectl get storageclass
+
+=============================================
+
+
