@@ -1,0 +1,13 @@
+<Message>
+      {
+        "requestId":"{messageid}",
+        "proxy":"{apiproxy.name}",
+        "env":"{environment.name}",
+        "clientIp":"{client.ip}",
+         "verb":"{request.verb}",
+        "path":"{proxy.pathsuffix}",
+        "status":"{response.status.code}",
+        "target":"{target.url}"
+      }
+    </Message>
+    <Format>JSON</Format>
