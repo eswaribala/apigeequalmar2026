@@ -1,8 +1,8 @@
 name: ApigeeTest
-
 on:
   push:
-    branches: [ projects ]
+    branches: [projects]
+
 
 permissions:
   contents: read
