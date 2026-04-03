@@ -2,7 +2,7 @@ name: Apigee Deploy
 
 on:
   push:
-    branches: [ main ]
+    branches: [ projects ]
 
 permissions:
   contents: read
