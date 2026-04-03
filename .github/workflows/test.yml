@@ -1,8 +1,8 @@
-name: Apigee Deploy
+name: ApigeeTest
 
 on:
   push:
-    branches: [ main ]
+    branches: [ projects ]
 
 permissions:
   contents: read
