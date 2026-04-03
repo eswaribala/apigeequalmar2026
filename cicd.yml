@@ -1,0 +1,59 @@
+name: Apigee Proxy CI/CD
+ 
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: npm install -g apigeelint apigeecli
+
+      - name: Unzip proxy bundle
+        run: unzip userproxy.zip
+
+      - name: Lint proxy
+        run: apigeelint -s ./apiproxy
+
+      - name: Package proxy
+        run: zip -r userproxy.zip apiproxy
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: proxy-bundle
+          path: userproxy.zip
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: apigee   # 👈 must match the environment name where you stored secrets
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: proxy-bundle
+          path: ./proxy-bundle
+
+      - name: Install Apigee CLI
+        run: npm install -g apigeecli
+
+      - name: Deploy API Proxy
+        run: |
+          apigeecli proxies create bundle \
+            --org "$APIGEE_ORG" \
+            --env "$APIGEE_ENV" \
+            --token "$APIGEE_TOKEN" \
+            --file ./proxy-bundle/userproxy.zip
+        env:
+          APIGEE_ORG: ${{ secrets.APIGEE_ORG }}
+          APIGEE_ENV: ${{ secrets.APIGEE_ENV }}
+          APIGEE_USERNAME: ${{ secrets.APIGEE_USERNAME }}
+          APIGEE_PASSWORD: ${{ secrets.APIGEE_PASSWORD }}
+          APIGEE_TOKEN: ${{ secrets.APIGEE_TOKEN }}
