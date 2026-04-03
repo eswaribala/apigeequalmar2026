@@ -1,0 +1,57 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Apigee CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - projects
+  pull_request:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout repo
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 2: Setup Node.js (Apigee tools use npm)
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      # Step 3: Install Apigee CLI
+      - name: Install Apigee CLI
+        run: npm install -g apigeetool
+
+      # Step 4: Validate proxy structure
+      - name: Validate Apigee Proxy
+        run: |
+          if [ ! -f apiproxy/apiproxy.xml ]; then
+            echo "apiproxy.xml missing!"
+            exit 1
+          fi
+
+      # Step 5: Deploy proxy to Apigee
+      - name: Deploy Apigee Proxy
+        run: |
+          apigeetool deployproxy \
+            -u ${{ secrets.APIGEE_USER }} \
+            -p ${{ secrets.APIGEE_PASS }} \
+            -o ${{ secrets.APIGEE_ORG }} \
+            -e ${{ secrets.APIGEE_ENV }} \
+            -n my-api-proxy \
+            -d ./apiproxy
+
+      # Step 6: Smoke test (optional)
+      - name: Test API Endpoint
+        run: |
+          curl -s -o /dev/null -w "%{http_code}" \
+          "https://${{ secrets.APIGEE_ENV_HOST }}/my-api-proxy" | grep 200
+
+      # Step 7: Log deployment status
+      - name: Log Deployment
+        run: echo "Proxy deployed successfully at $(date)"
