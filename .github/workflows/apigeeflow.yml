@@ -1,0 +1,31 @@
+name: Apigee Deploy
+
+on:
+  push:
+    branches: [projects]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Authenticate
+        run: gcloud auth activate-service-account --key-file=key.json
+
+      - name: Import Proxy
+        run: |
+          curl -X POST \
+          "https://apigee.googleapis.com/v1/organizations/$ORG/apis?action=import&name=my-proxy" \
+          -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+          -F "file=@apiproxy.zip"
+
+      - name: Deploy Proxy
+        run: |
+          curl -X POST \
+          "https://apigee.googleapis.com/v1/organizations/$ORG/environments/$ENV/apis/my-proxy/revisions/1/deployments" \
+          -H "Authorization: Bearer $(gcloud auth print-access-token)"-line script
+          echo Add other actions to build,
+          echo test, and deploy your project.
