@@ -3,7 +3,7 @@ name: Apigee CI/CD Pipeline
 on:
   push:
     branches:
-      - main
+      - projects
   pull_request:
 
 jobs:
